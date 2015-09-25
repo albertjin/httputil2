@@ -2,6 +2,7 @@ package httputil2
 
 import (
     "bytes"
+    "errors"
     "io"
     "io/ioutil"
     "net"
@@ -12,7 +13,6 @@ import (
     "github.com/albertjin/net2"
     "github.com/PuerkitoBio/goquery"
     "golang.org/x/text/transform"
-    "github.com/syndtr/goleveldb/leveldb/errors"
     "golang.org/x/text/encoding"
 )
 
