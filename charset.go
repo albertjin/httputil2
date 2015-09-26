@@ -42,42 +42,47 @@ func CharsetFromContentType(contentType string) (charset string, textType string
     return
 }
 
-// Detect charset from byte array when charset base is based on ascii codes and compatible with utf-8. Otherwise it does not work.
-func DetectCharset(source []byte) (charset string) {
-    data := source
-    const peek = 256
-    if len(source) > peek {
-        data = source[:peek]
-    }
+func detectCharset(source []byte) (charset string) {
+    if doc, err := goquery.NewDocumentFromReader(bytes.NewReader(source)); err == nil {
+        if ss := doc.Find("meta[charset]"); ss.Length() > 0 {
+            charset, _ = ss.Attr("charset")
+            charset = strings.ToLower(charset)
+            return
+        }
 
-    for i := 0; ; i++ {
-        if doc, err := goquery.NewDocumentFromReader(bytes.NewReader(data)); err == nil {
-            if ss := doc.Find("meta[charset]"); ss.Length() > 0 {
-                charset, _ = ss.Attr("charset")
-                charset = strings.ToLower(charset)
+        ss := doc.Find("meta[http-equiv]")
+        for i, l := 0, ss.Length(); i < l; i++ {
+            s := ss.Eq(i)
+            if h, _ := s.Attr("http-equiv"); strings.ToLower(h) == "content-type" {
+                contentType, _ := s.Attr("content")
+                charset, _, _ = CharsetFromContentType(contentType)
                 return
             }
+        }
+    } else {
+        log(err)
+    }
+    return
+}
 
-            ss := doc.Find("meta[http-equiv]")
-            for i, l := 0, ss.Length(); i < l; i++ {
-                s := ss.Eq(i)
-                if h, _ := s.Attr("http-equiv"); strings.ToLower(h) == "content-type" {
-                    contentType, _ := s.Attr("content")
-                    charset, _, _ = CharsetFromContentType(contentType)
-                    return
-                }
+// Detect charset from byte array when charset base is based on ascii codes and compatible with utf-8. Otherwise it does not work.
+func DetectCharset(source []byte) (charset string) {
+    if len(source) > 512 {
+        charset = detectCharset(source[:512])
+        if len(charset) > 0 {
+            return
+        }
+
+        re := regexp.MustCompile(`</ *[hH][eE][aA][dD] *>`)
+        if loc := re.FindIndex(source); len(loc) == 2 {
+            charset = detectCharset(source[:loc[1]])
+            if len(charset) > 0 {
+                return
             }
         }
-        if (i == 1) || (len(source) <= peek) {
-            break
-        }
-        re := regexp.MustCompile(`</ *[hH][eE][aA][dD] *>`)
-        if loc := re.FindIndex(source); (len(loc) == 2) && (loc[0] > peek) {
-            data = source[:loc[0]]
-        } else {
-            break
-        }
     }
+
+    charset = detectCharset(source)
     return
 }
 
