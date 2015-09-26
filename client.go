@@ -50,7 +50,7 @@ func TextStreamFromResponse(response *http.Response, check func(textType string)
 
     var data []byte
     var encoding encoding.Encoding
-    if len(charset) == 0 {
+    if (len(charset) == 0) && (textType == "html") {
         data, err = ioutil.ReadAll(response.Body)
         if err != nil {
             return
@@ -66,7 +66,14 @@ func TextStreamFromResponse(response *http.Response, check func(textType string)
 
         stream = transform.NewReader(bytes.NewReader(data), encoding.NewDecoder())
     } else {
-        stream = transform.NewReader(response.Body, encoding.NewDecoder())
+        if encoding, err = GetEncoding(charset); err != nil {
+            return
+        }
+        if encoding != nil {
+            stream = transform.NewReader(response.Body, encoding.NewDecoder())
+        } else {
+            stream = response.Body
+        }
     }
     return
 }
@@ -81,7 +88,7 @@ func TextFromResponse(response *http.Response) (text, textType string, err error
     var data []byte
     var stream io.Reader
     var encoding encoding.Encoding
-    if len(charset) == 0 {
+    if (len(charset) == 0) && (textType == "html") {
         data, err = ioutil.ReadAll(response.Body)
         if err != nil {
             return
@@ -90,6 +97,7 @@ func TextFromResponse(response *http.Response) (text, textType string, err error
         if encoding, err = GetEncoding(charset); err != nil {
             return
         }
+        // No encoding, it assumed as UTF-8.
         if encoding == nil {
             text = string(data)
             return
