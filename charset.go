@@ -6,7 +6,7 @@ import (
     "regexp"
     "strings"
 
-    "github.com/PuerkitoBio/goquery"
+    "github.com/albertjin/goquery"
     "golang.org/x/text/encoding"
     "golang.org/x/text/encoding/charmap"
     "golang.org/x/text/encoding/japanese"

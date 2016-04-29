@@ -11,7 +11,7 @@ import (
     "strings"
 
     "github.com/albertjin/net2"
-    "github.com/PuerkitoBio/goquery"
+    "github.com/albertjin/goquery"
     "golang.org/x/text/transform"
     "golang.org/x/text/encoding"
 )
