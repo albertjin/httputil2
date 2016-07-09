@@ -15,10 +15,16 @@ import (
     "golang.org/x/text/encoding/traditionalchinese"
 )
 
+var FixContentType func(contentType *string) = nil
+
 func CharsetFromContentType(contentType string) (charset string, textType string, err error) {
     contentType = strings.ToLower(contentType)
 
-    re := regexp.MustCompile(` *([a-z0-9\-.]+)/([a-z0-9\-.]+) *;?`)
+    if fix := FixContentType; fix != nil {
+        fix(&contentType)
+    }
+
+    re := regexp.MustCompile(`^([a-z0-9\-.]+)/([a-z0-9\-.]+)`)
     if ss := re.FindStringSubmatch(contentType); len(ss) == 3 {
         switch ss[1] {
         case "application":
@@ -35,7 +41,7 @@ func CharsetFromContentType(contentType string) (charset string, textType string
         err = errors.New("It's not text.\n" + contentType)
         return
     }
-    re = regexp.MustCompile(`; *charset=([a-z0-9\-_]+)`)
+    re = regexp.MustCompile(`; *charset=([a-z0-9\-_]+)$`)
     if ss := re.FindStringSubmatch(contentType); len(ss) == 2 {
         charset = ss[1]
     }

@@ -1,6 +1,7 @@
 package httputil2
 
 import (
+    "regexp"
     "testing"
 )
 
@@ -65,5 +66,21 @@ func TestDetectCharset(t *testing.T) {
 func TestExtractCharsetFromContentType(t *testing.T) {
     if charset, _, _ := CharsetFromContentType("text/html;charset=GBK"); charset != "gbk" {
         t.Error("charset: got", charset, "expected:", "gbk")
+    }
+
+    if _, textType, _ := CharsetFromContentType("application/json"); textType != "json" {
+        t.Error("charset: got", textType, "expected:", "json")
+    }
+
+    if _, textType, _ := CharsetFromContentType("applicatoin/json"); textType != "" {
+        t.Error("charset: got", textType, "expected:", "(empty)")
+    }
+
+    FixContentType = func(contentType *string) {
+        *contentType = regexp.MustCompile(`applicatoin`).ReplaceAllString(*contentType, "application")
+    }
+
+    if _, textType, _ := CharsetFromContentType("applicatoin/json"); textType != "json" {
+        t.Error("charset: got", textType, "expected:", "json")
     }
 }
