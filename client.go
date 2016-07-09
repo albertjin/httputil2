@@ -18,6 +18,10 @@ import (
 
 // Make http request. If non-nil form is passed, POST method is used; otherwise, GET is used.
 func Request(client *http.Client, link, cookie string, form url.Values, prepare func(request *http.Request)) (response *http.Response, err error) {
+    if client == nil {
+        client = DefaultClient
+    }
+
     var request *http.Request
     if form == nil {
         request, err = http.NewRequest("GET", link, nil)
@@ -48,10 +52,12 @@ func TextStreamFromResponse(response *http.Response, check func(textType string)
         return
     }
 
+    body := getBodyStream(response)
+
     var data []byte
     var encoding encoding.Encoding
     if (len(charset) == 0) && (textType == "html") {
-        data, err = ioutil.ReadAll(response.Body)
+        data, err = ioutil.ReadAll(body)
         if err != nil {
             return
         }
@@ -70,12 +76,16 @@ func TextStreamFromResponse(response *http.Response, check func(textType string)
             return
         }
         if encoding != nil {
-            stream = transform.NewReader(response.Body, encoding.NewDecoder())
+            stream = transform.NewReader(body, encoding.NewDecoder())
         } else {
-            stream = response.Body
+            stream = body
         }
     }
     return
+}
+
+func getBodyStream(response *http.Response) (body io.Reader) {
+    return response.Body
 }
 
 // There might be a shortcut when stream is not required, comparing to StreamFromResponse().
@@ -85,11 +95,13 @@ func TextFromResponse(response *http.Response) (text, textType string, err error
         return
     }
 
+    body := getBodyStream(response)
+
     var data []byte
     var stream io.Reader
     var encoding encoding.Encoding
     if (len(charset) == 0) && (textType == "html") {
-        data, err = ioutil.ReadAll(response.Body)
+        data, err = ioutil.ReadAll(body)
         if err != nil {
             return
         }
@@ -109,9 +121,9 @@ func TextFromResponse(response *http.Response) (text, textType string, err error
             return
         }
         if encoding != nil {
-            stream = transform.NewReader(response.Body, encoding.NewDecoder())
+            stream = transform.NewReader(body, encoding.NewDecoder())
         } else {
-            stream = response.Body
+            stream = body
         }
     }
 
@@ -123,17 +135,25 @@ func TextFromResponse(response *http.Response) (text, textType string, err error
 
 // Get binary data.
 func GetData(client *http.Client, link, cookie string, form url.Values, prepare func(request *http.Request)) (data []byte, response *http.Response, err error) {
+    if client == nil {
+        client = DefaultClient
+    }
+
     response, err = Request(client, link, cookie, form, prepare)
     if err != nil {
         return
     }
 
-    data, err = ioutil.ReadAll(response.Body)
+    data, err = ioutil.ReadAll(getBodyStream(response))
     return
 }
 
 // Get text.
 func GetText(client *http.Client, link, cookie string, form url.Values, parpare func(request *http.Request)) (text, textType string, response *http.Response, err error) {
+    if client == nil {
+        client = DefaultClient
+    }
+
     response, err = Request(client, link, cookie, form, parpare)
     if err != nil {
         return
@@ -146,6 +166,10 @@ func GetText(client *http.Client, link, cookie string, form url.Values, parpare 
 
 // Get goquery document.
 func GetDocument(client *http.Client, link, cookie string, form url.Values, prepare func(request *http.Request)) (document *goquery.Document, response *http.Response, err error) {
+    if client == nil {
+        client = DefaultClient
+    }
+
     response, err = Request(client, link, cookie, form, prepare)
     if err != nil {
         return
