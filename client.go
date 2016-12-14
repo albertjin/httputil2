@@ -2,6 +2,7 @@ package httputil2
 
 import (
     "bytes"
+    "crypto/tls"
     "errors"
     "io"
     "io/ioutil"
@@ -200,6 +201,21 @@ func NewClient(timeout *net2.Timeout) *http.Client {
             Dial: func(network, addr string) (net.Conn, error) {
                 return net2.Dial(network, addr, timeout)
             },
+        },
+    }
+}
+
+// New http.Client with timeouts by skipping SSL certificate verification.
+func NewClientInsecure(timeout *net2.Timeout) *http.Client {
+    if timeout == nil {
+        timeout = net2.DefaultTimeout
+    }
+    return &http.Client {
+        Transport: &http.Transport {
+            Dial: func(network, addr string) (net.Conn, error) {
+                return net2.Dial(network, addr, timeout)
+            },
+            TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
         },
     }
 }
