@@ -2,6 +2,8 @@ package httputil2
 
 import (
     "bytes"
+    "compress/gzip"
+    "compress/zlib"
     "crypto/tls"
     "errors"
     "io"
@@ -41,6 +43,7 @@ func Request(client *http.Client, link, cookie string, form url.Values, prepare 
     if prepare != nil {
         prepare(request)
     }
+    request.Header.Set("Accept-Encoding", "gzip, deflate")
 
     response, err = client.Do(request)
     return
@@ -86,6 +89,14 @@ func TextStreamFromResponse(response *http.Response, check func(textType string)
 }
 
 func getBodyStream(response *http.Response) (body io.Reader) {
+    switch response.Header.Get("Content-Encoding") {
+    case "gzip":
+        body, _ = gzip.NewReader(response.Body)
+        return
+    case "deflate":
+        body, _ = zlib.NewReader(response.Body)
+        return
+    }
     return response.Body
 }
 
