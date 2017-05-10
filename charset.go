@@ -2,10 +2,10 @@ package httputil2
 
 import (
     "bytes"
-    "errors"
     "regexp"
     "strings"
 
+    "github.com/albertjin/ec"
     "github.com/albertjin/goquery"
     "golang.org/x/text/encoding"
     "golang.org/x/text/encoding/charmap"
@@ -29,7 +29,7 @@ func CharsetFromContentType(contentType string) (charset string, textType string
         switch ss[1] {
         case "application":
             switch ss[2] {
-            case "json", "javascript":
+            case "json", "javascript", "x-javascript":
                 textType = ss[2]
             }
         case "text":
@@ -38,7 +38,7 @@ func CharsetFromContentType(contentType string) (charset string, textType string
     }
 
     if len(textType) == 0 {
-        err = errors.New("It's not text.\n" + contentType)
+        err = ec.NewErrorf("Content type is not recognized as text for charset: %v", contentType)
         return
     }
     re = regexp.MustCompile(`; *charset=([a-z0-9\-_]+)$`)
@@ -111,7 +111,7 @@ func GetEncoding(charset string) (encoding encoding.Encoding, err error) {
     case "iso-8859-1", "windows-1252": // windows-1252 is the superset of iso-8859-1.
         encoding = charmap.Windows1252
     default:
-        err = errors.New("The charset [" + charset + "] is not supported.")
+        err = ec.NewErrorf("The charset [%v] is not supported.", charset)
         log(critical, err.Error(), stack)
     }
     return
