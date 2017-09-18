@@ -18,6 +18,11 @@ import (
 var FixContentType func(contentType *string) = nil
 
 func CharsetFromContentType(contentType string) (charset string, textType string, err error) {
+    if len(contentType) == 0 {
+        charset = "utf-8"
+        textType = "plain"
+        return
+    }
     contentType = strings.ToLower(contentType)
 
     if fix := FixContentType; fix != nil {
